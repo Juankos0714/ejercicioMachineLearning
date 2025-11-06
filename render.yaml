@@ -4,10 +4,12 @@ services:
     runtime: node
     plan: free
     buildCommand: npm ci --legacy-peer-deps && npm run build
-    startCommand: npm run preview
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_OPTIONS
         value: --max-old-space-size=1024
+      - key: PORT
+        value: 10000
     healthCheckPath: /
