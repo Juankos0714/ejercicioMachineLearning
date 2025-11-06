@@ -7,7 +7,23 @@ import {
   type PoissonProbabilities,
   type MonteCarloResult
 } from '../utils/mathUtils';
-import { extractMatchFeatures } from './mlFeatureExtractor';
+import { extractMatchFeatures, type MatchFeatures } from './mlFeatureExtractor';
+import {
+  extractAdvancedFeatures,
+  type AdvancedMatchFeatures,
+  type FormData,
+  type HeadToHeadData,
+  type TeamAdvancedStats,
+  mockFormData,
+  mockHeadToHeadData,
+  mockAdvancedStats
+} from './mlAdvancedFeatures';
+import {
+  extractUltraFeatures,
+  type UltraMatchFeatures,
+  type UltraTeamStats,
+  mockUltraStats
+} from './mlUltraFeatures';
 import { predictRandomForest, type RandomForestPrediction, type TrainedRandomForestModel } from './mlRandomForest';
 import { predictNeuralNetwork, type NeuralNetworkPrediction, type TrainedNeuralNetwork } from './mlNeuralNetwork';
 
@@ -35,6 +51,8 @@ export interface HybridPrediction {
   // Metadata
   confidence: number;
   method: 'mathematical' | 'hybrid';
+  featureLevel: FeatureLevel;
+  featureCount: number;
   homeTeam: Team;
   awayTeam: Team;
 }
@@ -44,8 +62,31 @@ export interface HybridModels {
   neuralNetwork?: TrainedNeuralNetwork;
 }
 
+export type FeatureLevel = 'basic' | 'advanced' | 'ultra';
+
+export interface ExtendedMatchData {
+  // For advanced features
+  homeForm?: FormData;
+  awayForm?: FormData;
+  h2h?: HeadToHeadData;
+  homeAdvancedStats?: TeamAdvancedStats;
+  awayAdvancedStats?: TeamAdvancedStats;
+  matchDate?: Date;
+
+  // For ultra features
+  homeUltraStats?: UltraTeamStats;
+  awayUltraStats?: UltraTeamStats;
+}
+
 /**
  * Make hybrid prediction combining mathematical and ML methods
+ * @param homeTeam Home team data
+ * @param awayTeam Away team data
+ * @param league League name
+ * @param models ML models (optional)
+ * @param weights Model weights for ensemble
+ * @param extendedData Extended statistics (optional, for advanced/ultra features)
+ * @param featureLevel Force specific feature level (auto-detects if not specified)
  */
 export async function predictHybrid(
   homeTeam: Team,
@@ -56,7 +97,9 @@ export async function predictHybrid(
     mathematical: 0.4,
     randomForest: 0.3,
     neuralNetwork: 0.3
-  }
+  },
+  extendedData?: ExtendedMatchData,
+  featureLevel?: FeatureLevel
 ): Promise<HybridPrediction> {
   // Step 1: Calculate mathematical predictions (always available)
   const lambdaHome = calculateExpectedLambda(
@@ -87,8 +130,61 @@ export async function predictHybrid(
   const mathAwayWin = (poissonResult.awayWin + monteCarloResult.awayWinProb) / 2;
   const mathOver25 = (over25Poisson + monteCarloResult.over25Prob) / 2;
 
-  // Step 2: Extract features for ML models
-  const features = extractMatchFeatures(homeTeam, awayTeam, league);
+  // Step 2: Extract features for ML models based on available data
+  let features: MatchFeatures | AdvancedMatchFeatures | UltraMatchFeatures;
+  let actualFeatureLevel: FeatureLevel = featureLevel || 'basic';
+
+  // Auto-detect feature level if not specified
+  if (!featureLevel) {
+    if (extendedData?.homeUltraStats && extendedData?.awayUltraStats) {
+      actualFeatureLevel = 'ultra';
+    } else if (extendedData?.homeForm && extendedData?.awayForm) {
+      actualFeatureLevel = 'advanced';
+    } else {
+      actualFeatureLevel = 'basic';
+    }
+  }
+
+  // Extract appropriate features
+  if (actualFeatureLevel === 'ultra' && extendedData?.homeUltraStats && extendedData?.awayUltraStats) {
+    // Use ultra features (112 features)
+    const baseFeatures = extractMatchFeatures(homeTeam, awayTeam, league);
+    const advancedFeatures = extractAdvancedFeatures(
+      homeTeam,
+      awayTeam,
+      league,
+      extendedData.homeForm || mockFormData(),
+      extendedData.awayForm || mockFormData(),
+      extendedData.h2h || mockHeadToHeadData(),
+      extendedData.homeAdvancedStats || mockAdvancedStats(),
+      extendedData.awayAdvancedStats || mockAdvancedStats(),
+      extendedData.matchDate
+    );
+    features = extractUltraFeatures(
+      homeTeam,
+      awayTeam,
+      league,
+      extendedData.homeUltraStats,
+      extendedData.awayUltraStats,
+      advancedFeatures
+    );
+  } else if (actualFeatureLevel === 'advanced' && extendedData) {
+    // Use advanced features (45 features)
+    features = extractAdvancedFeatures(
+      homeTeam,
+      awayTeam,
+      league,
+      extendedData.homeForm || mockFormData(),
+      extendedData.awayForm || mockFormData(),
+      extendedData.h2h || mockHeadToHeadData(),
+      extendedData.homeAdvancedStats || mockAdvancedStats(),
+      extendedData.awayAdvancedStats || mockAdvancedStats(),
+      extendedData.matchDate
+    );
+  } else {
+    // Use basic features (19 features)
+    features = extractMatchFeatures(homeTeam, awayTeam, league);
+  }
 
   let finalHomeWin = mathHomeWin;
   let finalDraw = mathDraw;
@@ -164,6 +260,10 @@ export async function predictHybrid(
     finalAwayWin /= total;
   }
 
+  // Calculate feature count based on level
+  const featureCount = actualFeatureLevel === 'ultra' ? 112 :
+                      actualFeatureLevel === 'advanced' ? 45 : 19;
+
   return {
     homeWinProb: finalHomeWin,
     drawProb: finalDraw,
@@ -180,6 +280,8 @@ export async function predictHybrid(
     machineLearning: Object.keys(mlPredictions).length > 0 ? mlPredictions : undefined,
     confidence,
     method,
+    featureLevel: actualFeatureLevel,
+    featureCount,
     homeTeam,
     awayTeam,
   };
@@ -223,9 +325,11 @@ export async function comparePredictions(
   homeTeam: Team,
   awayTeam: Team,
   league: string,
-  models?: HybridModels
+  models?: HybridModels,
+  extendedData?: ExtendedMatchData,
+  featureLevel?: FeatureLevel
 ): Promise<PredictionComparison> {
-  const hybrid = await predictHybrid(homeTeam, awayTeam, league, models);
+  const hybrid = await predictHybrid(homeTeam, awayTeam, league, models, undefined, extendedData, featureLevel);
 
   const comparison: PredictionComparison = {
     mathematical: {
