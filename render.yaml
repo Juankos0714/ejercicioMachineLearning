@@ -9,7 +9,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NODE_OPTIONS
-        value: --max-old-space-size=1024
+        value: --max-old-space-size=450
       - key: PORT
         value: 10000
     healthCheckPath: /
