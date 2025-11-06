@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Calculator, TrendingUp, Target, Percent } from 'lucide-react';
 import { getTeamsByLeague, predictMatch, type PredictionResult } from '../services/predictionService';
 import { Team } from '../lib/supabase';
-import { PredictionChart } from './PredictionChart';
+
+// Lazy load the chart component to reduce initial bundle size
+const PredictionChart = lazy(() => import('./PredictionChart').then(module => ({ default: module.PredictionChart })));
 
 const LEAGUES = ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1'];
 
@@ -289,12 +291,18 @@ export function PredictionInterface() {
 
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h3 className="text-xl font-bold mb-6">Mathematical Analysis</h3>
-            <PredictionChart
-              poissonResult={prediction.poissonResult}
-              monteCarloResult={prediction.monteCarloResult}
-              homeTeamName={prediction.homeTeam.name}
-              awayTeamName={prediction.awayTeam.name}
-            />
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-12">
+                <div className="text-gray-500">Loading charts...</div>
+              </div>
+            }>
+              <PredictionChart
+                poissonResult={prediction.poissonResult}
+                monteCarloResult={prediction.monteCarloResult}
+                homeTeamName={prediction.homeTeam.name}
+                awayTeamName={prediction.awayTeam.name}
+              />
+            </Suspense>
           </div>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">

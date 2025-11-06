@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: football-predictor
+    runtime: node
+    plan: free
+    buildCommand: npm ci --legacy-peer-deps && npm run build
+    startCommand: npm run preview
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=1024
+    healthCheckPath: /
