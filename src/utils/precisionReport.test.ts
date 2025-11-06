@@ -18,15 +18,6 @@ interface PrecisionTest {
   over25Error?: number;
 }
 
-interface AccuracyMetrics {
-  totalTests: number;
-  averageError: number;
-  maxError: number;
-  minError: number;
-  errorStdDev: number;
-  successRate: number;
-}
-
 describe('Precision Report - Comprehensive Analysis', () => {
   it('should generate comprehensive precision statistics', () => {
     console.log('\n╔════════════════════════════════════════════════════════════════╗');
