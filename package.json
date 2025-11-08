@@ -18,7 +18,8 @@
     "train:mock": "tsx scripts/trainModels.ts train:mock",
     "train:retrain": "tsx scripts/trainModels.ts train:retrain",
     "train:check": "tsx scripts/trainModels.ts check",
-    "train:api": "tsx scripts/trainModels.ts api"
+    "train:api": "tsx scripts/trainModels.ts api",
+    "test:effectiveness": "tsx scripts/runEffectivenessTest.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
