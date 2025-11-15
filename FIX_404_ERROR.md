@@ -10,21 +10,46 @@ GET https://kwbjdxwustcludtekhqb.supabase.co/rest/v1/teams?select=*&league=eq.Pr
 
 ## Root Cause
 
-The `teams` table doesn't exist in your Supabase database. This happens when the database migrations haven't been applied yet to your Supabase project.
+This 404 error can happen due to two reasons:
+
+1. **Tables don't exist**: The `teams` table hasn't been created in your Supabase database
+2. **RLS Policy Issue** (Most Common): The Row Level Security (RLS) policies are configured for the wrong role
+
+### The RLS Policy Issue Explained
+
+Supabase uses specific roles for access control:
+- **`anon`** role: Used when making requests with the anon key (unauthenticated users)
+- **`authenticated`** role: Used for logged-in users
+- **`public`** role: PostgreSQL default role, but NOT used by Supabase client
+
+If your RLS policies are set to `TO public`, anonymous users cannot access the data, resulting in a 404 error.
 
 ## Solution
 
-Follow these steps to set up your database:
+### Quick Fix (If Tables Already Exist)
 
-### Step 1: Access Your Supabase SQL Editor
+If you've already run the setup script but are still getting 404 errors, the issue is likely the RLS policies:
+
+1. Go to [https://app.supabase.com](https://app.supabase.com) and open your project
+2. Click on **SQL Editor** in the left sidebar
+3. Click **New query**
+4. Copy and paste the contents of `supabase/fix-rls-policies.sql`
+5. Click **Run**
+6. Refresh your browser and the 404 errors should be gone!
+
+### Full Setup (If Tables Don't Exist)
+
+If you haven't set up the database yet:
+
+#### Step 1: Access Your Supabase SQL Editor
 
 1. Go to [https://app.supabase.com](https://app.supabase.com)
 2. Sign in to your account
-3. Open your project (the one with URL: `https://kwbjdxwustcludtekhqb.supabase.co`)
+3. Open your project
 4. Click on **SQL Editor** in the left sidebar
 5. Click **New query**
 
-### Step 2: Run the Setup Script
+#### Step 2: Run the Setup Script
 
 1. Open the file `supabase/setup-database.sql` in this project
 2. Copy the ENTIRE contents of the file
@@ -93,15 +118,20 @@ The `setup-database.sql` script:
 
 ### "Permission denied" errors?
 
-If you see permission errors, run this in SQL Editor:
+If you see permission errors, the RLS policies need to be fixed. Run the `supabase/fix-rls-policies.sql` script, or manually run:
 
 ```sql
--- Grant public access to teams table
-CREATE POLICY "Enable read access for all users"
+-- Drop old policy
+DROP POLICY IF EXISTS "Anyone can view teams" ON teams;
+
+-- Create correct policy for anon and authenticated users
+CREATE POLICY "Anyone can view teams"
   ON teams FOR SELECT
-  TO public
+  TO anon, authenticated
   USING (true);
 ```
+
+**Important**: Use `TO anon, authenticated` NOT `TO public` for Supabase!
 
 ### Need to start fresh?
 
