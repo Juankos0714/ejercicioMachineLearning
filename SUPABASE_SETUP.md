@@ -44,45 +44,39 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOi...
 
 ### Step 4: Set Up the Database Schema
 
-If this is a new Supabase project, you need to create the required tables:
+**⚡ Quick Setup (Recommended)**
+
+If this is a new Supabase project, use the all-in-one setup script:
 
 1. In Supabase dashboard, go to **SQL Editor**
 2. Click **New query**
-3. Copy and paste the contents of `scripts/seed-database.sql`
+3. Copy and paste the **entire contents** of `supabase/setup-database.sql`
 4. Click **Run** to execute the SQL
 
-This will create:
-- `teams` table with sample data
-- `matches` table
-- `predictions` table
-- `team_stats` table
+This single script will:
+- ✅ Create all tables (`teams`, `matches`, `predictions`, `team_stats`)
+- ✅ Set up indexes for performance
+- ✅ Configure Row Level Security (RLS) policies
+- ✅ Seed 38 teams from 5 major leagues
+- ✅ Everything you need in one step!
 
-### Step 5: Configure Row Level Security (RLS)
+**Alternative: Manual Setup**
 
-In the **Authentication** > **Policies** section, ensure:
+If you prefer step-by-step setup:
 
-1. **teams** table: Enable read access for everyone
-2. **matches** table: Enable read access for everyone
-3. **predictions** table: Enable read/write for authenticated users only
+1. Run `supabase/migrations/20251106183743_create_football_prediction_tables.sql` to create tables
+2. Run `scripts/seed-database.sql` to add sample teams
+3. Configure RLS policies (see below)
 
-Or run this SQL:
+### Step 5: Verify the Setup
 
-```sql
--- Enable RLS
-ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE team_stats ENABLE ROW LEVEL SECURITY;
+After running the setup script, verify in Supabase dashboard:
 
--- Public read access for teams and matches
-CREATE POLICY "Enable read access for all users" ON teams FOR SELECT USING (true);
-CREATE POLICY "Enable read access for all users" ON matches FOR SELECT USING (true);
-CREATE POLICY "Enable read access for all users" ON team_stats FOR SELECT USING (true);
-
--- Authenticated users can manage their own predictions
-CREATE POLICY "Enable read access for authenticated users" ON predictions FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
-CREATE POLICY "Enable insert for authenticated users" ON predictions FOR INSERT WITH CHECK (auth.uid() = user_id);
-```
+1. Go to **Database** → **Tables**
+2. You should see: `teams`, `matches`, `predictions`, `team_stats`
+3. Click on `teams` - you should see 38 teams across 5 leagues
+4. Go to **Authentication** → **Policies**
+5. Verify `teams` table has a SELECT policy for public access
 
 ### Step 6: Restart Your Dev Server
 
@@ -116,11 +110,15 @@ After updating the `.env` file:
 - Make sure you copied the entire key
 - Use the **anon public** key, not the service role key
 
-### Database tables not found?
+### Database tables not found (404 errors)?
 
-- Run the SQL from `scripts/seed-database.sql`
+**See the detailed fix guide: `FIX_404_ERROR.md`**
+
+Quick fix:
+- Run the SQL from `supabase/setup-database.sql` in Supabase SQL Editor
 - Check that tables exist in **Database** > **Tables**
 - Verify RLS policies are set correctly
+- Clear browser cache and refresh
 
 ## Testing Your Configuration
 
