@@ -114,10 +114,18 @@ After updating the `.env` file:
 
 **See the detailed fix guide: `FIX_404_ERROR.md`**
 
-Quick fix:
-- Run the SQL from `supabase/setup-database.sql` in Supabase SQL Editor
+**⚡ MOST COMMON ISSUE - RLS Policy Role Mismatch:**
+
+If you're getting 404 errors, it's likely because your RLS policies use `TO public` instead of `TO anon, authenticated`.
+
+**Quick fix:**
+1. Go to Supabase SQL Editor
+2. Run the script from `supabase/fix-rls-policies.sql`
+3. Refresh your browser
+
+**Alternative fixes:**
+- If tables don't exist: Run `supabase/setup-database.sql` (creates everything)
 - Check that tables exist in **Database** > **Tables**
-- Verify RLS policies are set correctly
 - Clear browser cache and refresh
 
 ## Testing Your Configuration

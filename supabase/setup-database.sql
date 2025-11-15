@@ -90,34 +90,34 @@ ALTER TABLE team_stats ENABLE ROW LEVEL SECURITY;
 -- 4. CREATE RLS POLICIES
 -- ============================================================================
 
--- Teams: Public read access
+-- Teams: Public read access (allow anonymous and authenticated users)
 CREATE POLICY "Anyone can view teams"
   ON teams FOR SELECT
-  TO public
+  TO anon, authenticated
   USING (true);
 
--- Matches: Public read access
+-- Matches: Public read access (allow anonymous and authenticated users)
 CREATE POLICY "Anyone can view matches"
   ON matches FOR SELECT
-  TO public
+  TO anon, authenticated
   USING (true);
 
--- Predictions: Authenticated users can view all predictions
+-- Predictions: Allow anonymous and authenticated users to view all predictions
 CREATE POLICY "Users can view all predictions"
   ON predictions FOR SELECT
-  TO authenticated
+  TO anon, authenticated
   USING (true);
 
--- Predictions: Users can create their own predictions
-CREATE POLICY "Users can create their own predictions"
+-- Predictions: Allow anonymous users to create predictions (user_id can be null)
+CREATE POLICY "Anyone can create predictions"
   ON predictions FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  TO anon, authenticated
+  WITH CHECK (true);
 
--- Team Stats: Authenticated users can view
-CREATE POLICY "Authenticated users can view team stats"
+-- Team Stats: Allow anonymous and authenticated users to view
+CREATE POLICY "Anyone can view team stats"
   ON team_stats FOR SELECT
-  TO authenticated
+  TO anon, authenticated
   USING (true);
 
 -- ============================================================================
