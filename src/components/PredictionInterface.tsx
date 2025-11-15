@@ -2,13 +2,18 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { Calculator, TrendingUp, Target, Percent } from 'lucide-react';
 import { getTeamsByLeague, predictMatch, type PredictionResult } from '../services/predictionService';
 import { Team } from '../lib/supabase';
+import type { HybridPrediction } from '../services/mlHybridPredictor';
 
 // Lazy load the chart component to reduce initial bundle size
 const PredictionChart = lazy(() => import('./PredictionChart').then(module => ({ default: module.PredictionChart })));
 
 const LEAGUES = ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1'];
 
-export function PredictionInterface() {
+interface PredictionInterfaceProps {
+  onPredictionChange?: (prediction: HybridPrediction | null) => void;
+}
+
+export function PredictionInterface({ onPredictionChange }: PredictionInterfaceProps) {
   const [selectedLeague, setSelectedLeague] = useState<string>('Premier League');
   const [teams, setTeams] = useState<Team[]>([]);
   const [homeTeamId, setHomeTeamId] = useState<string>('');
@@ -28,6 +33,9 @@ export function PredictionInterface() {
       setHomeTeamId('');
       setAwayTeamId('');
       setPrediction(null);
+      if (onPredictionChange) {
+        onPredictionChange(null);
+      }
     } catch (err) {
       setError('Failed to load teams');
     }
@@ -50,8 +58,36 @@ export function PredictionInterface() {
     try {
       const result = await predictMatch(homeTeamId, awayTeamId);
       setPrediction(result);
+
+      // Convert PredictionResult to HybridPrediction for compatibility
+      if (onPredictionChange) {
+        const hybridPrediction: HybridPrediction = {
+          homeWinProb: result.homeWinProb,
+          drawProb: result.drawProb,
+          awayWinProb: result.awayWinProb,
+          expectedHomeScore: result.expectedHomeScore,
+          expectedAwayScore: result.expectedAwayScore,
+          over25Prob: result.over25Prob,
+          mathematical: {
+            poisson: result.poissonResult,
+            monteCarlo: result.monteCarloResult,
+            lambdaHome: result.expectedHomeScore,
+            lambdaAway: result.expectedAwayScore,
+          },
+          confidence: 0.75, // Default confidence for mathematical predictions
+          method: 'mathematical',
+          featureLevel: 'basic',
+          featureCount: 6,
+          homeTeam: result.homeTeam,
+          awayTeam: result.awayTeam,
+        };
+        onPredictionChange(hybridPrediction);
+      }
     } catch (err) {
       setError('Failed to generate prediction');
+      if (onPredictionChange) {
+        onPredictionChange(null);
+      }
     } finally {
       setLoading(false);
     }
