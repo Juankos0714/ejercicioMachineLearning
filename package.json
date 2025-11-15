@@ -20,7 +20,8 @@
     "train:check": "tsx scripts/trainModels.ts check",
     "train:api": "tsx scripts/trainModels.ts api",
     "test:effectiveness": "tsx scripts/runEffectivenessTest.ts",
-    "test:effectiveness:demo": "tsx scripts/runEffectivenessTestDemo.ts"
+    "test:effectiveness:demo": "tsx scripts/runEffectivenessTestDemo.ts",
+    "betting:demo": "tsx scripts/runBettingIntegrationDemo.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
