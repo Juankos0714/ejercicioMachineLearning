@@ -6,6 +6,8 @@ import { PredictionInterface } from './components/PredictionInterface';
 import { BettingAnalysisPanel } from './components/BettingAnalysisPanel';
 import { RealTimeDashboard } from './components/RealTimeDashboard';
 import { CLVAnalysisPanel } from './components/CLVAnalysisPanel';
+import type { HybridPrediction } from './services/mlHybridPredictor';
+import type { ClosingLineValue } from './services/oddsApiService';
 
 type TabType = 'predictions' | 'betting' | 'dashboard' | 'clv';
 
@@ -13,6 +15,8 @@ function AppContent() {
   const { user, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('predictions');
+  const [currentPrediction, setCurrentPrediction] = useState<HybridPrediction | null>(null);
+  const [clvHistory, setClvHistory] = useState<ClosingLineValue[]>([]);
 
   const tabs = [
     { id: 'predictions' as TabType, label: 'Predictions', icon: Target },
@@ -90,10 +94,27 @@ function AppContent() {
 
       {/* Tab Content */}
       <div className="max-w-7xl mx-auto">
-        {activeTab === 'predictions' && <PredictionInterface />}
-        {activeTab === 'betting' && <BettingAnalysisPanel />}
+        {activeTab === 'predictions' && (
+          <PredictionInterface onPredictionChange={setCurrentPrediction} />
+        )}
+        {activeTab === 'betting' && (
+          currentPrediction ? (
+            <BettingAnalysisPanel prediction={currentPrediction} showAdvanced={true} />
+          ) : (
+            <div className="p-6">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                <p className="text-yellow-800 font-medium text-lg mb-2">
+                  ⚠️ No prediction available
+                </p>
+                <p className="text-yellow-700">
+                  Please generate a prediction first in the Predictions tab to see betting analysis.
+                </p>
+              </div>
+            </div>
+          )
+        )}
         {activeTab === 'dashboard' && <RealTimeDashboard />}
-        {activeTab === 'clv' && <CLVAnalysisPanel />}
+        {activeTab === 'clv' && <CLVAnalysisPanel clvHistory={clvHistory} />}
       </div>
 
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
