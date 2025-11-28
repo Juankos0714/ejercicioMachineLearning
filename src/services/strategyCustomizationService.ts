@@ -14,7 +14,7 @@
 
 import { BettingStrategy, BetRecommendation, MarketOdds } from './mlBettingAnalyzer';
 import { HybridPrediction } from './mlHybridPredictor';
-import { UserPreferences, userPreferencesService } from './historicalDataService';
+import { UserPreferences } from './historicalDataService';
 
 // ==================== TYPES ====================
 
@@ -412,7 +412,7 @@ export class StrategyCustomizationService {
   evaluateBet(
     strategy: CustomStrategy,
     prediction: HybridPrediction,
-    odds: MarketOdds,
+    _odds: MarketOdds,
     recommendation: BetRecommendation
   ): {
     shouldBet: boolean;
@@ -525,13 +525,13 @@ export class StrategyCustomizationService {
 
     switch (condition.operator) {
       case '>':
-        return actualValue > expectedValue;
+        return typeof actualValue === 'number' && typeof expectedValue === 'number' && actualValue > expectedValue;
       case '<':
-        return actualValue < expectedValue;
+        return typeof actualValue === 'number' && typeof expectedValue === 'number' && actualValue < expectedValue;
       case '>=':
-        return actualValue >= expectedValue;
+        return typeof actualValue === 'number' && typeof expectedValue === 'number' && actualValue >= expectedValue;
       case '<=':
-        return actualValue <= expectedValue;
+        return typeof actualValue === 'number' && typeof expectedValue === 'number' && actualValue <= expectedValue;
       case '==':
         return actualValue === expectedValue;
       case '!=':

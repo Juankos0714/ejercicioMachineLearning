@@ -69,8 +69,8 @@ export interface OddsHistory {
  * Extract betting-specific features from odds and teams
  */
 export function extractBettingFeatures(
-  homeTeam: Team,
-  awayTeam: Team,
+  _homeTeam: Team,
+  _awayTeam: Team,
   currentOdds: MarketOdds,
   oddsHistory?: OddsHistory[],
   modelProbabilities?: { home: number; draw: number; away: number }

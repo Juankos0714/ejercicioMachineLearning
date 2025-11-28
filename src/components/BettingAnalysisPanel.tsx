@@ -11,7 +11,7 @@
  * - Bankroll management tips
  */
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { HybridPrediction } from '../services/mlHybridPredictor';
 import {
   analyzeBettingOpportunities,
@@ -19,6 +19,7 @@ import {
   type BettingAnalysis,
   type BetRecommendation,
 } from '../services/mlBettingAnalyzer';
+import { useBetting } from '../contexts/BettingContext';
 
 interface BettingAnalysisPanelProps {
   prediction: HybridPrediction;
@@ -33,9 +34,12 @@ export function BettingAnalysisPanel({
   defaultBankroll = 1000,
   showAdvanced = false,
 }: BettingAnalysisPanelProps) {
+  const { addBet } = useBetting();
   const [bankroll, setBankroll] = useState(defaultBankroll);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedBet, setSelectedBet] = useState<BetRecommendation | null>(null);
+  const [customStake, setCustomStake] = useState<{ [key: number]: number }>({});
+  const [placedBets, setPlacedBets] = useState<Set<number>>(new Set());
 
   // Default market odds if not provided (example odds)
   const defaultOdds: MarketOdds = useMemo(() => ({
@@ -91,6 +95,41 @@ export function BettingAnalysisPanel({
       case 'Very High': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
+  };
+
+  // Handle placing a bet
+  const handlePlaceBet = (bet: BetRecommendation, index: number, stakeType: 'kelly' | 'fractional' | 'fixed') => {
+    let stake: number;
+
+    // Use custom stake if set, otherwise use recommended
+    if (customStake[index]) {
+      stake = customStake[index];
+    } else {
+      switch (stakeType) {
+        case 'kelly':
+          stake = bet.recommendedStake.kelly * bankroll;
+          break;
+        case 'fractional':
+          stake = bet.recommendedStake.kellyFractional * bankroll;
+          break;
+        case 'fixed':
+          stake = bet.recommendedStake.fixedAmount || (bet.recommendedStake.fixedPercentage / 100) * bankroll;
+          break;
+      }
+    }
+
+    // Add bet to context
+    addBet(bet, prediction, stake);
+
+    // Mark as placed
+    setPlacedBets(prev => new Set(prev).add(index));
+
+    // Clear custom stake
+    setCustomStake(prev => {
+      const updated = { ...prev };
+      delete updated[index];
+      return updated;
+    });
   };
 
   if (!marketOdds && !showAdvanced) {
@@ -232,6 +271,16 @@ export function BettingAnalysisPanel({
                         <div className="text-xs text-blue-700 mt-1">
                           {formatPercent(bet.recommendedStake.kelly * 100)} of bankroll
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaceBet(bet, index, 'kelly');
+                          }}
+                          disabled={placedBets.has(index)}
+                          className="mt-2 w-full px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {placedBets.has(index) ? 'Bet Placed ✓' : 'Place Bet'}
+                        </button>
                       </div>
                       <div className="bg-green-50 rounded p-3">
                         <div className="text-xs font-medium text-green-900 mb-1">Fractional Kelly (Safer)</div>
@@ -241,6 +290,16 @@ export function BettingAnalysisPanel({
                         <div className="text-xs text-green-700 mt-1">
                           {formatPercent(bet.recommendedStake.kellyFractional * 100)} of bankroll
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaceBet(bet, index, 'fractional');
+                          }}
+                          disabled={placedBets.has(index)}
+                          className="mt-2 w-full px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {placedBets.has(index) ? 'Bet Placed ✓' : 'Place Bet'}
+                        </button>
                       </div>
                       <div className="bg-purple-50 rounded p-3">
                         <div className="text-xs font-medium text-purple-900 mb-1">Fixed Percentage</div>
@@ -250,6 +309,49 @@ export function BettingAnalysisPanel({
                         <div className="text-xs text-purple-700 mt-1">
                           {formatPercent(bet.recommendedStake.fixedPercentage)} of bankroll
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaceBet(bet, index, 'fixed');
+                          }}
+                          disabled={placedBets.has(index)}
+                          className="mt-2 w-full px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {placedBets.has(index) ? 'Bet Placed ✓' : 'Place Bet'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Custom stake input */}
+                    <div className="mt-4 bg-gray-50 rounded p-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Custom Stake Amount
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={customStake[index] || ''}
+                          onChange={(e) => setCustomStake(prev => ({
+                            ...prev,
+                            [index]: Number(e.target.value)
+                          }))}
+                          placeholder="Enter custom amount"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          min="0"
+                          step="10"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (customStake[index]) {
+                              handlePlaceBet(bet, index, 'fixed');
+                            }
+                          }}
+                          disabled={!customStake[index] || placedBets.has(index)}
+                          className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {placedBets.has(index) ? 'Placed ✓' : 'Place Custom'}
+                        </button>
                       </div>
                     </div>
 

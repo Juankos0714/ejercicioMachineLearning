@@ -13,8 +13,8 @@
  */
 
 import { supabase } from '../lib/supabase';
-import { OddsSnapshot, BookmakerOdds } from './oddsApiService';
-import { BetRecommendation, BettingStrategy } from './mlBettingAnalyzer';
+import { OddsSnapshot } from './oddsApiService';
+import { BettingStrategy } from './mlBettingAnalyzer';
 import { Alert } from './alertSystem';
 
 // ==================== TYPES ====================

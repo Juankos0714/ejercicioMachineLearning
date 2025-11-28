@@ -4,7 +4,6 @@ import {
   ultraFeaturesToArray,
   getUltraFeatureNames,
   mockUltraStats,
-  type UltraMatchFeatures,
   type UltraTeamStats,
 } from './mlUltraFeatures';
 import { mockFormData, mockHeadToHeadData, mockAdvancedStats, extractAdvancedFeatures } from './mlAdvancedFeatures';
@@ -20,6 +19,7 @@ describe('Ultra Features for Maximum Accuracy', () => {
     avg_goals_conceded: 1.2,
     xg_per_match: 2.0,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
   const mockAwayTeam: Team = {
@@ -31,6 +31,7 @@ describe('Ultra Features for Maximum Accuracy', () => {
     avg_goals_conceded: 0.9,
     xg_per_match: 2.5,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
   describe('Feature Extraction', () => {

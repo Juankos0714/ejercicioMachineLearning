@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LogIn, LogOut, User, BarChart3, TrendingUp, Target, Activity } from 'lucide-react';
 import { AuthProvider, useAuth } from './components/AuthProvider';
+import { BettingProvider } from './contexts/BettingContext';
 import { AuthModal } from './components/AuthModal';
 import { PredictionInterface } from './components/PredictionInterface';
 import { BettingAnalysisPanel } from './components/BettingAnalysisPanel';
@@ -16,7 +17,7 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('predictions');
   const [currentPrediction, setCurrentPrediction] = useState<HybridPrediction | null>(null);
-  const [clvHistory, setClvHistory] = useState<ClosingLineValue[]>([]);
+  const [clvHistory] = useState<ClosingLineValue[]>([]);
 
   const tabs = [
     { id: 'predictions' as TabType, label: 'Predictions', icon: Target },
@@ -125,7 +126,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <BettingProvider>
+        <AppContent />
+      </BettingProvider>
     </AuthProvider>
   );
 }

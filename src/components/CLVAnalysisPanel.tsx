@@ -11,7 +11,7 @@
  * - Sharp money indicators
  */
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ClosingLineValue } from '../services/oddsApiService';
 
 interface CLVAnalysisPanelProps {
@@ -34,7 +34,7 @@ interface CLVStatistics {
   byMarket: Map<string, { avgCLV: number; count: number }>;
 }
 
-export function CLVAnalysisPanel({ clvHistory, showCharts = true }: CLVAnalysisPanelProps) {
+export function CLVAnalysisPanel({ clvHistory }: CLVAnalysisPanelProps) {
   // Calculate statistics
   const stats = useMemo<CLVStatistics>(() => {
     if (clvHistory.length === 0) {

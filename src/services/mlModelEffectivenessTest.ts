@@ -1,6 +1,5 @@
 import { supabase, Team, Match } from '../lib/supabase';
 import { predictHybrid, HybridPrediction } from './mlHybridPredictor';
-import { loadRealMatchData } from './mlRealDataLoader';
 
 /**
  * Resultado real de un partido

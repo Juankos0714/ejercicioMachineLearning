@@ -13,8 +13,6 @@
  */
 
 import {
-  BettingAnalysis,
-  BetRecommendation,
   BettingStrategy,
   BankrollManager,
   initializeBankroll,
@@ -300,7 +298,7 @@ export class BacktestingEngine {
     let stakePercent = 0;
 
     switch (this.config.strategy) {
-      case 'KellyCriterion':
+      case 'KellyCriterion': {
         // Kelly = (bp - q) / b, where b = odds - 1
         const b = odds - 1;
         const p = probability;
@@ -308,7 +306,7 @@ export class BacktestingEngine {
         const kelly = (b * p - q) / b;
         stakePercent = Math.max(0, Math.min(kelly * this.config.kellyFraction!, this.config.maxStake!));
         break;
-
+      }
       case 'FixedStake':
         stakePercent = ev > 5 ? 0.02 : ev > 2 ? 0.01 : 0.005;
         break;

@@ -1,19 +1,14 @@
-import { supabase, Team } from '../lib/supabase';
-import { predictHybrid, type HybridPrediction, type HybridModels } from './mlHybridPredictor';
+import { supabase } from '../lib/supabase';
+import { predictHybrid, type HybridPrediction } from './mlHybridPredictor';
 import { loadNeuralNetwork } from './mlNeuralNetwork';
 import { trainAllModels, type TrainedModels, AutoRetrainingScheduler } from './mlTrainingSystem';
 import {
-  calculateRecentForm,
-  getTeamStatsInDateRange,
-  type FormData,
-  type TeamAdvancedStats
+  calculateRecentForm
 } from './mlRealDataLoader';
 import {
-  extractAdvancedFeatures,
-  mockFormData,
-  mockHeadToHeadData,
   mockAdvancedStats,
-  type HeadToHeadData
+  type FormData,
+  type TeamAdvancedStats
 } from './mlAdvancedFeatures';
 
 /**
@@ -36,7 +31,7 @@ export class MLPredictionAPI {
     try {
       // Try to load existing trained models
       console.log('📦 Loading existing models...');
-      const nnModel = await loadNeuralNetwork('localstorage://football-predictor-trained');
+      await loadNeuralNetwork('localstorage://football-predictor-trained');
 
       // TODO: Load RF model (currently no persistence for RF)
       // For now, we'll need to retrain
@@ -46,7 +41,7 @@ export class MLPredictionAPI {
         optimizeWeights: true
       });
 
-    } catch (error) {
+    } catch {
       console.log('📚 No existing models found, training initial models...\n');
       this.models = await trainAllModels({
         useRealData: true,

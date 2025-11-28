@@ -170,7 +170,7 @@ export interface UltraTeamStats {
 export function extractUltraFeatures(
   homeTeam: Team,
   awayTeam: Team,
-  league: string,
+  _league: string,
   homeStats: UltraTeamStats,
   awayStats: UltraTeamStats,
   baseFeatures: AdvancedMatchFeatures

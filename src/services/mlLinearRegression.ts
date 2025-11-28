@@ -156,8 +156,6 @@ export function trainLinearRegression(
 
   // Convert features to matrix X (add intercept column)
   const X = features.map(f => [1, ...featuresToArray(f)]); // Add 1 for intercept
-  const n = X.length;
-  const m = X[0].length;
 
   // Extract target variables
   const yHome = targets.map(t => [t.homeGoals]);
@@ -170,7 +168,7 @@ export function trainLinearRegression(
   let XTX_inv: number[][];
   try {
     XTX_inv = matrixInverse(XTX);
-  } catch (error) {
+  } catch {
     console.error('❌ Matrix inversion failed. Using regularization...');
     // Add small regularization term to diagonal (Ridge regression)
     for (let i = 0; i < XTX.length; i++) {

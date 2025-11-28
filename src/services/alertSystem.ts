@@ -12,7 +12,7 @@
  * - Alert filtering and prioritization
  */
 
-import { BetRecommendation, BettingAnalysis } from './mlBettingAnalyzer';
+import { BettingAnalysis } from './mlBettingAnalyzer';
 import { OddsMovement, ClosingLineValue } from './oddsApiService';
 
 // ==================== TYPES ====================

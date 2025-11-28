@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { PredictionComparison, EffectivenessMetrics } from './mlModelEffectivenessTest';
+import type { PredictionComparison } from './mlModelEffectivenessTest';
 
 /**
  * Tests para el módulo de test de efectividad del modelo

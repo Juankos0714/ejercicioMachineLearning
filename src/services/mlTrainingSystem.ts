@@ -300,13 +300,12 @@ export async function evaluateOnTestSet(
  * Retrain models with new data
  */
 export async function retrainModels(
-  existingModels?: TrainedModels,
-  newDataOnly: boolean = false
+  existingModels?: TrainedModels
 ): Promise<TrainedModels> {
   console.log('\n🔄 Retraining models with latest data...\n');
 
   // Load latest data
-  const dataset = await generateRealDataset(500, 0.2);
+  await generateRealDataset(500, 0.2);
 
   // Use same configuration as original training
   const config: TrainingConfig = {
@@ -419,12 +418,12 @@ export class AutoRetrainingScheduler {
       return;
     }
 
-    const { shouldRetrain, reason } = shouldRetrain(this.models);
+    const { shouldRetrain: needsRetrain, reason } = shouldRetrain(this.models);
 
     console.log(`\n🔍 Checking retraining status...`);
     console.log(`   ${reason}`);
 
-    if (shouldRetrain) {
+    if (needsRetrain) {
       console.log('   ➡️  Retraining models...\n');
       this.models = await retrainModels(this.models);
     } else {

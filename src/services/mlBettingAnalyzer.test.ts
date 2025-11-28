@@ -60,9 +60,10 @@ const mockPrediction: HybridPrediction = {
       homeWinProb: 0.32,
       drawProb: 0.24,
       awayWinProb: 0.44,
+      avgHomeScore: 1.5,
+      avgAwayScore: 2.0,
       over25Prob: 0.67,
-      mostLikelyScore: { home: 1, away: 2, probability: 0.15 },
-      scoreDistribution: [],
+      scoreDistribution: new Map(),
     },
     lambdaHome: 1.5,
     lambdaAway: 2.0,
@@ -374,7 +375,7 @@ describe('Betting Analyzer - Bankroll Management', () => {
 
   describe('simulateBet', () => {
     it('should update bankroll after winning bet', () => {
-      const bankroll = initializeBankroll(1000);
+      initializeBankroll(1000);
       const bet: BetRecommendation = {
         betType: '1X2',
         outcome: 'home',

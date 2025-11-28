@@ -36,7 +36,7 @@ export function PredictionInterface({ onPredictionChange }: PredictionInterfaceP
       if (onPredictionChange) {
         onPredictionChange(null);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load teams');
     }
   };
@@ -83,7 +83,7 @@ export function PredictionInterface({ onPredictionChange }: PredictionInterfaceP
         };
         onPredictionChange(hybridPrediction);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to generate prediction');
       if (onPredictionChange) {
         onPredictionChange(null);

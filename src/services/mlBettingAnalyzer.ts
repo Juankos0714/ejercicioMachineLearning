@@ -278,8 +278,6 @@ export function calculateExpectedValue(
   modelProbability: number,
   marketOdds: number
 ): number {
-  const impliedProb = oddsToImpliedProbability(marketOdds);
-
   // EV = (model_prob * (odds - 1)) - ((1 - model_prob) * 1)
   // Simplified: EV = model_prob * odds - 1
   const ev = (modelProbability * marketOdds) - 1;
@@ -722,7 +720,6 @@ export function generateStrategyAdvice(
   const advice: StrategyAdvice[] = [];
 
   const valueBets = recommendations.filter(r => r.isValueBet);
-  const strongValueBets = recommendations.filter(r => r.isStrongValue);
   const avgEV = valueBets.reduce((sum, r) => sum + r.expectedValue, 0) / (valueBets.length || 1);
 
   // Value Betting Strategy

@@ -81,7 +81,6 @@ export interface ClosingLineValue {
 export class OddsAPIClient {
   private config: OddsAPIConfig;
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
-  private cacheTimeout: number = 60000; // 1 minute cache
 
   constructor(config: OddsAPIConfig) {
     this.config = {
@@ -242,7 +241,7 @@ export class OddsAPIClient {
   /**
    * Track odds movements over time
    */
-  async trackOddsMovement(matchId: string, intervalMinutes: number = 5): Promise<OddsMovement[]> {
+  async trackOddsMovement(matchId: string): Promise<OddsMovement[]> {
     const movements: OddsMovement[] = [];
     const previousSnapshot = this.cache.get(matchId);
     const currentSnapshot = (await this.fetchLiveOdds(matchId))[0];

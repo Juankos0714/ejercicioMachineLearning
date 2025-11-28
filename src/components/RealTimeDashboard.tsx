@@ -12,21 +12,15 @@
  * - CLV analysis
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { OddsSnapshot, OddsMovement } from '../services/oddsApiService';
-import { BetRecord, BankrollManager, initializeBankroll } from '../services/mlBettingAnalyzer';
+import { useState, useEffect, useMemo } from 'react';
+import { OddsSnapshot } from '../services/oddsApiService';
+import { BankrollManager, initializeBankroll } from '../services/mlBettingAnalyzer';
 import { ClosingLineValue } from '../services/oddsApiService';
+import { useBetting } from '../contexts/BettingContext';
 
 interface RealTimeDashboardProps {
   apiKey?: string;
   initialBankroll?: number;
-}
-
-interface LiveBet extends BetRecord {
-  isLive: boolean;
-  currentOdds?: number;
-  potentialPayout: number;
-  potentialProfit: number;
 }
 
 interface Alert {
@@ -41,67 +35,88 @@ interface Alert {
 }
 
 export function RealTimeDashboard({ apiKey, initialBankroll = 1000 }: RealTimeDashboardProps) {
+  // Get bets from context
+  const { activeBets, settledBets, settleBet } = useBetting();
+
   // State
   const [bankroll, setBankroll] = useState<BankrollManager>(initializeBankroll(initialBankroll));
-  const [activeBets, setActiveBets] = useState<LiveBet[]>([]);
-  const [settledBets, setSettledBets] = useState<BetRecord[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [liveOdds, setLiveOdds] = useState<OddsSnapshot[]>([]);
-  const [oddsMovements, setOddsMovements] = useState<OddsMovement[]>([]);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30); // seconds
-  const [clvData, setCLVData] = useState<ClosingLineValue[]>([]);
+  const [refreshInterval] = useState(30); // seconds
+  const [clvData] = useState<ClosingLineValue[]>([]);
+
+  // Refresh odds when active bets change
+  useEffect(() => {
+    refreshOdds();
+  }, [activeBets.length]);
 
   // Auto-refresh odds
   useEffect(() => {
-    if (!autoRefresh || !apiKey) return;
+    if (!autoRefresh) return;
+
+    // Initial refresh
+    refreshOdds();
 
     const interval = setInterval(() => {
       refreshOdds();
     }, refreshInterval * 1000);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, apiKey]);
+  }, [autoRefresh, refreshInterval, activeBets]);
 
-  // Refresh odds (mock implementation)
+  // Refresh odds (updated to use real match data)
   const refreshOdds = async () => {
     // In production, this would call the actual Odds API
-    // For now, simulate with mock data
-    const mockOdds: OddsSnapshot = {
-      timestamp: new Date(),
-      matchId: 'match-1',
-      homeTeam: 'Team A',
-      awayTeam: 'Team B',
-      bookmakers: [],
-      bestOdds: {
-        homeWin: 2.1 + Math.random() * 0.2,
-        draw: 3.3 + Math.random() * 0.3,
-        awayWin: 3.5 + Math.random() * 0.3,
-        over25: 1.9 + Math.random() * 0.2,
-        under25: 2.0 + Math.random() * 0.2,
-      },
-      avgOdds: {
-        homeWin: 2.0 + Math.random() * 0.2,
-        draw: 3.2 + Math.random() * 0.3,
-        awayWin: 3.4 + Math.random() * 0.3,
-        over25: 1.85 + Math.random() * 0.2,
-        under25: 1.95 + Math.random() * 0.2,
-      },
-    };
+    // For now, generate mock data for each active bet's match
+    if (activeBets.length === 0) {
+      setLiveOdds([]);
+      return;
+    }
 
-    setLiveOdds([mockOdds]);
+    // Get unique matches from active bets
+    const uniqueMatches = new Map<string, typeof activeBets[0]>();
+    activeBets.forEach(bet => {
+      if (!uniqueMatches.has(bet.matchId)) {
+        uniqueMatches.set(bet.matchId, bet);
+      }
+    });
+
+    // Generate odds for each match
+    const oddsSnapshots: OddsSnapshot[] = Array.from(uniqueMatches.values()).map(bet => {
+      // Use prediction probabilities if available to generate more realistic odds
+      const prediction = bet.prediction;
+      const baseHomeOdds = prediction ? 1 / prediction.homeWinProb : 2.5;
+      const baseDrawOdds = prediction ? 1 / prediction.drawProb : 3.3;
+      const baseAwayOdds = prediction ? 1 / prediction.awayWinProb : 2.8;
+      const baseOver25Odds = prediction ? 1 / prediction.over25Prob : 1.9;
+
+      return {
+        timestamp: new Date(),
+        matchId: bet.matchId,
+        homeTeam: bet.homeTeam,
+        awayTeam: bet.awayTeam,
+        bookmakers: [],
+        bestOdds: {
+          homeWin: baseHomeOdds + (Math.random() - 0.5) * 0.2,
+          draw: baseDrawOdds + (Math.random() - 0.5) * 0.3,
+          awayWin: baseAwayOdds + (Math.random() - 0.5) * 0.2,
+          over25: baseOver25Odds + (Math.random() - 0.5) * 0.2,
+          under25: (1 / (1 - (prediction?.over25Prob || 0.5))) + (Math.random() - 0.5) * 0.2,
+        },
+        avgOdds: {
+          homeWin: baseHomeOdds * 0.95 + (Math.random() - 0.5) * 0.1,
+          draw: baseDrawOdds * 0.95 + (Math.random() - 0.5) * 0.2,
+          awayWin: baseAwayOdds * 0.95 + (Math.random() - 0.5) * 0.1,
+          over25: baseOver25Odds * 0.95 + (Math.random() - 0.5) * 0.1,
+          under25: (1 / (1 - (prediction?.over25Prob || 0.5))) * 0.95 + (Math.random() - 0.5) * 0.1,
+        },
+      };
+    });
+
+    setLiveOdds(oddsSnapshots);
   };
 
-  // Add alert
-  const addAlert = (alert: Omit<Alert, 'id' | 'timestamp' | 'read'>) => {
-    const newAlert: Alert = {
-      ...alert,
-      id: `alert-${Date.now()}`,
-      timestamp: new Date(),
-      read: false,
-    };
-    setAlerts(prev => [newAlert, ...prev]);
-  };
 
   // Mark alert as read
   const markAlertRead = (id: string) => {
@@ -114,6 +129,23 @@ export function RealTimeDashboard({ apiKey, initialBankroll = 1000 }: RealTimeDa
   const clearAlerts = () => {
     setAlerts([]);
   };
+
+  // Update bankroll based on settled bets
+  useEffect(() => {
+    const totalProfit = settledBets.reduce((sum, bet) => sum + (bet.profit || 0), 0);
+    const wonBets = settledBets.filter(bet => bet.result === 'won').length;
+    const lostBets = settledBets.filter(bet => bet.result === 'lost').length;
+    const winRate = settledBets.length > 0 ? (wonBets / settledBets.length) * 100 : 0;
+
+    setBankroll(prev => ({
+      ...prev,
+      currentBankroll: initialBankroll + totalProfit,
+      netProfit: totalProfit,
+      wonBets,
+      lostBets,
+      winRate,
+    }));
+  }, [settledBets, initialBankroll]);
 
   // Calculate real-time metrics
   const metrics = useMemo(() => {
@@ -159,16 +191,6 @@ export function RealTimeDashboard({ apiKey, initialBankroll = 1000 }: RealTimeDa
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
     return `${Math.floor(hours / 24)}d ago`;
-  };
-
-  // Alert severity colors
-  const getAlertColor = (severity: Alert['severity']) => {
-    switch (severity) {
-      case 'success': return 'bg-green-100 border-green-500 text-green-900';
-      case 'warning': return 'bg-yellow-100 border-yellow-500 text-yellow-900';
-      case 'danger': return 'bg-red-100 border-red-500 text-red-900';
-      default: return 'bg-blue-100 border-blue-500 text-blue-900';
-    }
   };
 
   const getAlertIcon = (type: Alert['type']) => {
@@ -290,12 +312,35 @@ export function RealTimeDashboard({ apiKey, initialBankroll = 1000 }: RealTimeDa
                             <span>Odds: <strong>{bet.odds.toFixed(2)}</strong></span>
                             <span>Stake: <strong>{formatCurrency(bet.stake)}</strong></span>
                           </div>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              onClick={() => settleBet(bet.id, 'won')}
+                              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                            >
+                              Won ✓
+                            </button>
+                            <button
+                              onClick={() => settleBet(bet.id, 'lost')}
+                              className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                            >
+                              Lost ✗
+                            </button>
+                            <button
+                              onClick={() => settleBet(bet.id, 'void')}
+                              className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
+                            >
+                              Void
+                            </button>
+                          </div>
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-green-600">
                             {formatCurrency(bet.potentialPayout)}
                           </div>
                           <div className="text-xs text-gray-500">Potential Payout</div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            Profit: {formatCurrency(bet.potentialProfit)}
+                          </div>
                         </div>
                       </div>
                     </div>

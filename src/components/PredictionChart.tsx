@@ -58,7 +58,7 @@ export function PredictionChart({
     colorscale: 'Blues' as const,
     showscale: true,
     colorbar: {
-      title: 'Probability %'
+      title: { text: 'Probability %' }
     }
   }];
 
@@ -70,8 +70,8 @@ export function PredictionChart({
           data={probData}
           layout={{
             barmode: 'group',
-            xaxis: { title: 'Outcome' },
-            yaxis: { title: 'Probability (%)' },
+            xaxis: { title: { text: 'Outcome' } },
+            yaxis: { title: { text: 'Probability (%)' } },
             height: 400,
             margin: { t: 20, b: 60, l: 60, r: 20 }
           }}
@@ -85,8 +85,8 @@ export function PredictionChart({
         <Plot
           data={scoreData}
           layout={{
-            xaxis: { title: 'Score' },
-            yaxis: { title: 'Probability (%)' },
+            xaxis: { title: { text: 'Score' } },
+            yaxis: { title: { text: 'Probability (%)' } },
             height: 300,
             margin: { t: 20, b: 60, l: 60, r: 20 }
           }}
@@ -100,8 +100,8 @@ export function PredictionChart({
         <Plot
           data={heatmapData}
           layout={{
-            xaxis: { title: `${awayTeamName} Goals`, side: 'bottom' },
-            yaxis: { title: `${homeTeamName} Goals` },
+            xaxis: { title: { text: `${awayTeamName} Goals` }, side: 'bottom' },
+            yaxis: { title: { text: `${homeTeamName} Goals` } },
             height: 500,
             margin: { t: 20, b: 80, l: 80, r: 20 }
           }}

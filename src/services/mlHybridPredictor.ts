@@ -21,8 +21,7 @@ import {
 import {
   extractUltraFeatures,
   type UltraMatchFeatures,
-  type UltraTeamStats,
-  mockUltraStats
+  type UltraTeamStats
 } from './mlUltraFeatures';
 import { predictRandomForest, type RandomForestPrediction, type TrainedRandomForestModel } from './mlRandomForest';
 import { predictNeuralNetwork, type NeuralNetworkPrediction, type TrainedNeuralNetwork } from './mlNeuralNetwork';
@@ -148,7 +147,7 @@ export async function predictHybrid(
   // Extract appropriate features
   if (actualFeatureLevel === 'ultra' && extendedData?.homeUltraStats && extendedData?.awayUltraStats) {
     // Use ultra features (112 features)
-    const baseFeatures = extractMatchFeatures(homeTeam, awayTeam, league);
+    extractMatchFeatures(homeTeam, awayTeam, league);
     const advancedFeatures = extractAdvancedFeatures(
       homeTeam,
       awayTeam,
